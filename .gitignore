@@ -1,0 +1,15 @@
+dist
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+.*/
+logs/
+tmp*/
