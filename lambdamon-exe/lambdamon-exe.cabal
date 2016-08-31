@@ -1,8 +1,8 @@
-name:                lua
+name:                lambdamon-exe
 version:             0.1.0.0
-synopsis:            Initial project template from stack
+synopsis:            Executable part loading plugins
 description:         Please see README.md
-homepage:            https://github.com/sgraf812/lua#readme
+homepage:            https://github.com/sgraf812/hal#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Sebastian Graf
@@ -13,18 +13,12 @@ build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
-library
+executable lambdamon-exe
   hs-source-dirs:      src
-  exposed-modules:     Lib
-  build-depends:       base >= 4.7 && < 5
-  default-language:    Haskell2010
-
-executable lua-exe
-  hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , lua
+                     , lambdamon-types
                      , vty
                      , brick
                      , microlens-platform
@@ -32,17 +26,10 @@ executable lua-exe
                      , random
                      , data-default
                      , extra
-  default-language:    Haskell2010
-
-test-suite lua-test
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  build-depends:       base
-                     , lua
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+                     , hslua
+                     , hint
   default-language:    Haskell2010
 
 source-repository head
   type:     git
-  location: https://github.com/sgraf812/lua
+  location: https://github.com/sgraf812/hal
