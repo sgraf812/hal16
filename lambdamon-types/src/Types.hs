@@ -1,34 +1,26 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Types
   ( Move(..)
-  , GameState(GameState)
-  , HasHealth(..)
-  , HasConcentration(..)
-  , HasDamageMultiplier(..)
-  , HasHasCoffee(..)
+  , GameState(..)
   , Plugin(..)
   ) where
 
-import Lens.Micro.Platform
+import Data.Typeable
 
 data Move
   = Reduce
   | Rename
   | Capture
   | Coffee
-  deriving (Eq, Ord, Show, Bounded, Enum, Read)
+  deriving (Eq, Ord, Show, Bounded, Enum, Read, Typeable)
 
 data GameState = GameState
-  { gameStateHealth :: Int
-  , gameStateDamageMultiplier :: Int
-  , gameStateConcentration :: Int
-  , gameStateHasCoffee :: Bool
-  }
-
-makeFields ''GameState
+  { health :: Int
+  , damageMultiplier :: Int
+  , concentration :: Int
+  , hasCoffee :: Bool
+  } deriving (Eq, Ord, Show, Typeable)
 
 newtype Plugin = Plugin
   { runPlugin :: GameState -> IO Move

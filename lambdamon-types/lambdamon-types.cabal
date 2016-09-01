@@ -10,14 +10,17 @@ maintainer:          sgraf1337@gmail.com
 copyright:           2015 Sebastian Graf
 category:            Development
 build-type:          Simple
+data-files:          src/Types.hs
 -- extra-source-files:
 cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Types
+  exposed-modules:     Types, Paths
+  other-modules:       Paths_lambdamon_types
   build-depends:       base >= 4.7 && < 5
                      , microlens-platform
+                     , filepath
   default-language:    Haskell2010
 
 source-repository head

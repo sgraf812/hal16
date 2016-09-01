@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 import Brick
 import Brick.AttrMap
@@ -12,7 +9,7 @@ import Brick.Widgets.Dialog
 import Brick.Widgets.ProgressBar
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.Chan
-import Control.Monad (forever, replicateM, when)
+import Control.Monad (forever, replicateM, when, void)
 import Control.Monad.IO.Class (liftIO)
 import Data.Char (chr, ord)
 import Data.Default
@@ -23,17 +20,19 @@ import Graphics.Vty
 import Lens.Micro.Platform
 import System.Random (randomIO)
 import System.Environment (getArgs)
-import Types
+import Types (Plugin(..), GameState(GameState), Move(..))
 import PluginLoaders
+import Control.Concurrent.Lock (Lock)
+import qualified Control.Concurrent.Lock as Lock
 
 data ExprStats = ExprStats
-  { exprStatsCurHealth :: Int
-  , exprStatsMaxHealth :: Int
-  , exprStatsDamageMultiplier :: Int
-  , exprStatsVarChar :: Char
+  { _curHealth :: Int
+  , _maxHealth :: Int
+  , _damageMultiplier :: Int
+  , _varChar :: Char
   } deriving (Eq, Ord, Show)
 
-makeFields ''ExprStats
+makeLenses ''ExprStats
 
 descr :: Move -> String
 descr Reduce = "Beta Reduce"
@@ -50,15 +49,15 @@ data Phase
   deriving (Eq, Ord, Show)
 
 data AppState = AppState
-  { appStateConcentration :: Int
-  , appStateExpr :: ExprStats
-  , appStateScore :: Int
-  , appStateNextMove :: Dialog Move
-  , appStatePhase :: Phase
-  , appStateRemainingCoffee :: Int
+  { _concentration :: Int
+  , _expr :: ExprStats
+  , _score :: Int
+  , _nextMove :: Dialog Move
+  , _phase :: Phase
+  , _remainingCoffee :: Int
   }
 
-makeFields ''AppState
+makeLenses ''AppState
 
 reductionDmg :: AppState -> Int
 reductionDmg s = s ^. expr . damageMultiplier * 50
@@ -69,12 +68,12 @@ newDialog = dialog Nothing (Just (0, map (descr &&& id) moves)) (fst dimensions)
 initialState :: AppState
 initialState =
   AppState
-  { appStateConcentration = 10
-  , appStateScore = 0
-  , appStateExpr = undefined
-  , appStateNextMove = newDialog
-  , appStatePhase = ChooseMove
-  , appStateRemainingCoffee = 1
+  { _concentration = 10
+  , _score = 0
+  , _expr = undefined
+  , _nextMove = newDialog
+  , _phase = ChooseMove
+  , _remainingCoffee = 1
   }
 
 moves :: [Move]
@@ -386,22 +385,24 @@ determinePlugin = do
     then return Nothing
     else case head args of
            "--lua" -> luaPlugin (args !! 1)
+           "--hint" -> hintPlugin (args !! 1)
            _ -> return Nothing
 
 main :: IO ()
 main = do
-  gameStates <- newChan
   events <- newChan
+  choosingMove <- Lock.new
   plugin <- determinePlugin
   forkIO $ forever $
     do threadDelay 100000
-       writeChan events Tick
+       Lock.with choosingMove (writeChan events Tick)
   let askPlugin st =
         case plugin of
           Nothing -> return ()
-          Just p -> do
-            move <- runPlugin p st
-            writeChan events (PluginChoseMove move)
+          Just p ->
+            Lock.with choosingMove $
+            do move <- runPlugin p st
+               writeChan events (PluginChoseMove move)
   s <- customMain (mkVty def) events (app askPlugin) initialState
   putStrLn $ "Zzzz... You fell asleep. Your score was " ++ show (s ^. score)
   return ()
