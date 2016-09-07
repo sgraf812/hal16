@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module PluginLoaders where
 
 import Types
@@ -8,6 +10,8 @@ import Scripting.Lua (LuaState)
 import qualified Scripting.Lua as Lua
 import Language.Haskell.Interpreter (Interpreter)
 import qualified Language.Haskell.Interpreter as Hint
+import System.Plugins.DynamicLoader (DynamicModule)
+import qualified System.Plugins.DynamicLoader as DL
 import System.Directory (doesFileExist, canonicalizePath)
 import Data.Typeable
 
@@ -31,13 +35,7 @@ luaPlugin script = do
       return (toEnum move)
 
 hintPlugin :: FilePath -> IO (Maybe Plugin)
-hintPlugin script = do
-  ex <- doesFileExist script
-  if ex
-    then return . Just . Plugin $ plugin
-    else do
-      putStrLn ("Could not find " ++ script)
-      return Nothing
+hintPlugin script = return . Just . Plugin $ plugin
   where
     plugin :: GameState -> IO Move
     plugin st =
@@ -50,3 +48,12 @@ hintPlugin script = do
          Hint.loadModules [scriptFile]
          Hint.setTopLevelModules ["Main"]
          read <$> Hint.eval ("chooseMove " ++ Hint.parens (show st))
+
+dllPlugin :: FilePath -> IO (Maybe Plugin)
+dllPlugin pkgPath = do
+  pkg <- DL.loadPackage "lambdamon-dll" (Just pkgPath) Nothing Nothing
+  DL.resolveFunctions
+  v :: Int <- DL.loadQualifiedFunction "Version.version"
+  print v
+  chooseMove <- DL.loadQualifiedFunction "Optimal.chooseMove"
+  return (Just (Plugin (return . chooseMove)))

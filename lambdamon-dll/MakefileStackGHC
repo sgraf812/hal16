@@ -1,0 +1,9 @@
+all: bin/HSlambdamon-dll.o
+
+bin/HSlambdamon-dll.o: *.hs stack.yaml lambdamon-dll.cabal
+	@mkdir -p bin/ build/
+	@stack ghc -- src/*.hs -odir build/
+	@ld -r build/*.o -o bin/HSlambdamon-dll.o
+
+clean:
+	@rm -rf bin/ build/

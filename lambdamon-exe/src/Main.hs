@@ -386,6 +386,7 @@ determinePlugin = do
     else case head args of
            "--lua" -> luaPlugin (args !! 1)
            "--hint" -> hintPlugin (args !! 1)
+           "--dll" -> dllPlugin (args !! 1)
            _ -> return Nothing
 
 main :: IO ()
