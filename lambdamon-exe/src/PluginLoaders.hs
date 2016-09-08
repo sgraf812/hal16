@@ -12,6 +12,8 @@ import Language.Haskell.Interpreter (Interpreter)
 import qualified Language.Haskell.Interpreter as Hint
 import System.Plugins.DynamicLoader (DynamicModule)
 import qualified System.Plugins.DynamicLoader as DL
+import System.Plugins.Load (LoadStatus(..))
+import qualified System.Plugins.Load as Plugins
 import System.Directory (doesFileExist, canonicalizePath)
 import Data.Typeable
 
@@ -49,11 +51,19 @@ hintPlugin script = return . Just . Plugin $ plugin
          Hint.setTopLevelModules ["Main"]
          read <$> Hint.eval ("chooseMove " ++ Hint.parens (show st))
 
-dllPlugin :: FilePath -> IO (Maybe Plugin)
-dllPlugin pkgPath = do
+dynamicLoaderPlugin :: FilePath -> IO (Maybe Plugin)
+dynamicLoaderPlugin pkgPath = do
   pkg <- DL.loadPackage "lambdamon-dll" (Just pkgPath) Nothing Nothing
   DL.resolveFunctions
   v :: Int <- DL.loadQualifiedFunction "Version.version"
   print v
   chooseMove <- DL.loadQualifiedFunction "Optimal.chooseMove"
   return (Just (Plugin (return . chooseMove)))
+
+pluginsPlugin :: FilePath -> IO (Maybe Plugin)
+pluginsPlugin pkgPath = do
+  status :: LoadStatus Int <- Plugins.load_ "Version.o" [pkgPath] "version"
+  case status of
+    LoadSuccess module_ v -> print v
+    LoadFailure errors -> print errors
+  return Nothing

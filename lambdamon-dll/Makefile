@@ -13,14 +13,14 @@ bin/HSlambdamon-dll.o: *.hs stack.yaml lambdamon-dll.cabal
 
 	@mkdir -p bin/ build/
 	@cd build && ar -x ../$(LIB)
-	@ld -r build/*.o -o bin/HSlambdamon-dll.o
-	
+	@ld -r build/*.o -o build/HSlambdamon-dll.o
+
 	@# Now find those symbols containing the fingerprint for renaming
 	@# ... for my eyes only ...
-	@nm -j bin/HSlambdamon-dll.o | grep $(FINGERPRINT) | sed -E "s/(^(.*)_[0-9a-zA-Z]+$(FINGERPRINT)(.*)$$)/\1 \2\3/" > build/renamed_symbols.txt
-	@echo symbols to rename:
-	@cat build/renamed_symbols.txt
-	@gobjcopy bin/HSlambdamon-dll.o --redefine-syms build/renamed_symbols.txt
+	@cd build && for obj in *.o; do nm -j $$obj | grep $(FINGERPRINT) | sed -E "s/(^(.*)_[0-9a-zA-Z]+$(FINGERPRINT)(.*)$$)/\1 \2\3/" > rename_$$obj.txt; done
+	@cd build && for obj in *.o; do gobjcopy $$obj --redefine-syms rename_$$obj.txt; done
+
+	@cp build/*.o bin/
 
 
 # Problem: stack build has a special package prefix which contains the 

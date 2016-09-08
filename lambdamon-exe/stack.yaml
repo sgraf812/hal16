@@ -43,6 +43,7 @@ packages:
 extra-deps:
 - brick-0.8
 - dynamic-loader-0.0.1
+- plugins-1.5.5.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}

@@ -30,6 +30,7 @@ executable lambdamon-exe
                      , hslua
                      , hint
                      , dynamic-loader
+                     , plugins
                      , directory
                      , concurrent-extra
   default-language:    Haskell2010
