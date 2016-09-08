@@ -19,7 +19,6 @@ library
   exposed-modules:     Types, Paths
   other-modules:       Paths_lambdamon_types
   build-depends:       base >= 4.7 && < 5
-                     , microlens-platform
                      , filepath
   default-language:    Haskell2010
 

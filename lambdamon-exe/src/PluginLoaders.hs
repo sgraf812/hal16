@@ -53,7 +53,7 @@ hintPlugin script = return . Just . Plugin $ plugin
 
 dynamicLoaderPlugin :: FilePath -> IO (Maybe Plugin)
 dynamicLoaderPlugin pluginPath = do
-  pkg <- DL.loadPackage "lambdamon-dll" (Just pluginPath) Nothing Nothing
+  ar <- DL.loadArchiveFromPath pluginPath
   DL.resolveFunctions
   v :: Int <- DL.loadQualifiedFunction "Version.version"
   print v
