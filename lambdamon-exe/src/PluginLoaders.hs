@@ -52,8 +52,8 @@ hintPlugin script = return . Just . Plugin $ plugin
          read <$> Hint.eval ("chooseMove " ++ Hint.parens (show st))
 
 dynamicLoaderPlugin :: FilePath -> IO (Maybe Plugin)
-dynamicLoaderPlugin pkgPath = do
-  pkg <- DL.loadPackage "lambdamon-dll" (Just pkgPath) Nothing Nothing
+dynamicLoaderPlugin pluginPath = do
+  pkg <- DL.loadPackage "lambdamon-dll" (Just pluginPath) Nothing Nothing
   DL.resolveFunctions
   v :: Int <- DL.loadQualifiedFunction "Version.version"
   print v
@@ -61,9 +61,9 @@ dynamicLoaderPlugin pkgPath = do
   return (Just (Plugin (return . chooseMove)))
 
 pluginsPlugin :: FilePath -> IO (Maybe Plugin)
-pluginsPlugin pkgPath = do
-  status :: LoadStatus Int <- Plugins.load_ "Version.o" [pkgPath] "version"
+pluginsPlugin pluginPath = do
+  status :: LoadStatus Int <- Plugins.pdynload "Version.o" [pluginPath] [] "Prelude.Int" "version"
   case status of
     LoadSuccess module_ v -> print v
-    LoadFailure errors -> print errors
+    LoadFailure errors -> putStrLn (unlines errors)
   return Nothing
