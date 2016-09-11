@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Optimal where
+module Plugin where
 
 import Types
 

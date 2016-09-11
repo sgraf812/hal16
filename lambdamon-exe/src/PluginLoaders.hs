@@ -42,13 +42,9 @@ hintPlugin script = return . Just . Plugin $ plugin
     plugin :: GameState -> IO Move
     plugin st =
       fmap (either (error . show) id) . Hint.runInterpreter $
-      do Hint.set
-           [ Hint.languageExtensions Hint.:=
-             [Hint.RecordWildCards, Hint.MultiWayIf]
-           , Hint.searchPath Hint.:= [".", srcPath]]
-         scriptFile <- Hint.liftIO (canonicalizePath script)
+      do scriptFile <- Hint.liftIO (canonicalizePath script)
          Hint.loadModules [scriptFile]
-         Hint.setTopLevelModules ["Main"]
+         Hint.setTopLevelModules ["Plugin"]
          read <$> Hint.eval ("chooseMove " ++ Hint.parens (show st))
 
 dynamicLoaderPlugin :: FilePath -> IO (Maybe Plugin)
@@ -62,7 +58,8 @@ dynamicLoaderPlugin pluginPath = do
 
 pluginsPlugin :: FilePath -> IO (Maybe Plugin)
 pluginsPlugin pluginPath = do
-  status :: LoadStatus Int <- Plugins.pdynload "Version.o" [pluginPath] [] "Prelude.Int" "version"
+  status :: LoadStatus Int <-
+    Plugins.pdynload "Version.o" [pluginPath] [] "Prelude.Int" "version"
   case status of
     LoadSuccess module_ v -> print v
     LoadFailure errors -> putStrLn (unlines errors)

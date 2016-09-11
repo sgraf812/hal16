@@ -4,12 +4,12 @@ all: bin/HSlambdamon-dll.o
 bin/HSlambdamon-dll.o: *.hs stack.yaml lambdamon-dll.cabal
 	@stack build 
 
-	$(eval LIB=$(shell find .stack-work/dist | grep -e "\.a"))
+	$(eval LIB:=$(shell find .stack-work/dist | grep -e "\.a"))
 	@echo lib: $(LIB)
 
-	@# First match the fingerprint, then escape z and Z by zz and ZZ as GHC does (z-encoding)
-	$(eval FINGERPRINT=$(shell echo $(LIB) | sed -E "s/^.*-([^-]+)\.a/\1/;s/z/zz/;s/Z/ZZ/"))
-	@echo z-encoded fingerprint: $(FINGERPRINT)
+	@# First match the package-key, then escape z and Z by zz and ZZ as GHC does (z-encoding)
+	$(eval PACKAGE_KEY:=$(shell stack exec ghc-pkg describe lambdamon-dll | grep "key:" | sed -E "s/^key: (\w*)$$/\1/;s/_/zu/;s/-/zm/;s/z/zz/;s/Z/ZZ/")
+	@echo z-encoded package-key: $(PACKAGE_KEY)
 
 	@mkdir -p bin/ build/
 	@cd build && ar -x ../$(LIB)

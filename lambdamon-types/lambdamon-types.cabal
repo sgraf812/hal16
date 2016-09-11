@@ -10,7 +10,6 @@ maintainer:          sgraf1337@gmail.com
 copyright:           2015 Sebastian Graf
 category:            Development
 build-type:          Simple
-data-files:          src/Types.hs
 -- extra-source-files:
 cabal-version:       >=1.10
 
