@@ -20,7 +20,6 @@ import Data.Typeable
 luaPlugin :: FilePath -> IO (Maybe Plugin)
 luaPlugin script = do
   l <- Lua.newstate
-  Lua.openlibs l
   return . Just . Plugin $ selectMove l
   where
     selectMove :: LuaState -> GameState -> IO Move
