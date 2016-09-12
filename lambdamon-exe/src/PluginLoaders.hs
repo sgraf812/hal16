@@ -24,14 +24,20 @@ luaPlugin script = do
   where
     selectMove :: LuaState -> GameState -> IO Move
     selectMove l state = do
+      -- Load the script contents on the stack
       Lua.loadfile l script
-      Lua.call l 0 1
+      -- Execute the script file (it's a thunk semantically)
+      Lua.call l 0 {-arguments-} 1 {-result on stack-}
+      -- The result (which now lies on top of the stack) should be an anonymous
+      -- function, taking 4 arguments and returning an integer in [0..3] for
+      -- the chosen move
       Lua.pushinteger l . fromIntegral . health $ state
       Lua.pushinteger l . fromIntegral . damageMultiplier $ state
       Lua.pushinteger l . fromIntegral . concentration $ state
       Lua.pushboolean l . hasCoffee $ state
       Lua.call l 4 1
-      move <- fromJust <$> Lua.peek l 1
+      -- 1 is the index of the topmost stack element, which is the return val.
+      move :: Int <- fromJust <$> Lua.peek l 1
       Lua.pop l 1
       return (toEnum move)
 
