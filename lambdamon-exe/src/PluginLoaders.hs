@@ -56,8 +56,6 @@ dynamicLoaderPlugin :: FilePath -> IO (Maybe Plugin)
 dynamicLoaderPlugin pluginPath = do
   ar <- DL.loadArchiveFromPath pluginPath
   DL.resolveFunctions
-  v :: Int <- DL.loadQualifiedFunction "Version.version"
-  print v
   chooseMove <- DL.loadQualifiedFunction "Optimal.chooseMove"
   return (Just (Plugin (return . chooseMove)))
 
