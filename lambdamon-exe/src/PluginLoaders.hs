@@ -56,7 +56,8 @@ dynamicLoaderPlugin :: FilePath -> IO (Maybe Plugin)
 dynamicLoaderPlugin pluginPath = do
   ar <- DL.loadArchiveFromPath pluginPath
   DL.resolveFunctions
-  chooseMove <- DL.loadQualifiedFunction "Optimal.chooseMove"
+  chooseMove :: GameState -> Move <-
+    DL.loadQualifiedFunction "Optimal.chooseMove"
   return (Just (Plugin (return . chooseMove)))
 
 pluginsPlugin :: FilePath -> IO (Maybe Plugin)
