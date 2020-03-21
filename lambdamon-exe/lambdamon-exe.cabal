@@ -27,7 +27,7 @@ executable lambdamon-exe
                      , random
                      , data-default
                      , extra
-                     , hslua
+                     , hslua <= 0.5
                      , hint
                      , dynamic-loader
                      , plugins

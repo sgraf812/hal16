@@ -4,6 +4,7 @@
 
 import Brick
 import Brick.AttrMap
+import Brick.BChan
 import Brick.Widgets.Center
 import Brick.Widgets.Dialog
 import Brick.Widgets.ProgressBar
@@ -14,10 +15,11 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Char (chr, ord)
 import Data.Default
 import Data.Maybe
+import Data.Tuple.Extra
 import Debug.Trace (traceShowId)
-import Extra
 import Graphics.Vty
 import Lens.Micro.Platform
+import Numeric.Extra
 import System.Random (randomIO)
 import System.Environment (getArgs)
 import Types (Plugin(..), GameState(GameState), Move(..))
@@ -80,8 +82,7 @@ moves :: [Move]
 moves = enumFrom minBound
 
 data MyEvent
-  = VtyEvent Event
-  | Tick
+  = Tick
   | PluginChoseMove Move
 
 dimensions :: (Int, Int)
@@ -268,7 +269,7 @@ gameState s =
 
 handleEvent :: (GameState -> IO ())
             -> AppState
-            -> MyEvent
+            -> BrickEvent n MyEvent
             -> EventM () (Next AppState)
 handleEvent _ s (VtyEvent (EvKey KEsc _)) = halt s
 handleEvent askPlugin s (VtyEvent (EvKey KEnter _)) =
@@ -281,18 +282,18 @@ handleEvent askPlugin s (VtyEvent (EvKey KEnter _)) =
              case mv of
                Coffee -> remainingCoffee %~ subtract 1
                _ -> id
-    ChooseMove -> handleEvent askPlugin s (PluginChoseMove move)
+    ChooseMove -> handleEvent askPlugin s (AppEvent (PluginChoseMove move))
       where Just move = s ^. nextMove . to dialogSelection
 handleEvent _ s (VtyEvent ev) =
   case s ^. phase of
     ChooseMove -> continue =<< handleEventLensed s nextMove handleDialogEvent ev
     _ -> continue s
-handleEvent _ s (PluginChoseMove move) =
+handleEvent _ s (AppEvent (PluginChoseMove move)) =
   continue $ s &
   if move == Coffee && s ^. remainingCoffee <= 0
     then id
     else phase .~ Animation move 0
-handleEvent askPlugin s Tick =
+handleEvent askPlugin s (AppEvent Tick) =
   case s ^. phase of
     Animation Coffee n ->
       if s ^. concentration == 10
@@ -375,7 +376,6 @@ app askPlugin =
   , appStartEvent = \s -> (\e -> (expr .~ e) s) <$> newExpr s
   , appAttrMap = const theMap
   , appChooseCursor = showFirstCursor
-  , appLiftVtyEvent = VtyEvent
   }
 
 determinePlugin :: IO (Maybe Plugin)
@@ -392,20 +392,22 @@ determinePlugin = do
 
 main :: IO ()
 main = do
-  events <- newChan
+  events <- newBChan 1000
   choosingMove <- Lock.new
   plugin <- determinePlugin
   forkIO $ forever $
     do threadDelay 100000
-       Lock.with choosingMove (writeChan events Tick)
+       Lock.with choosingMove (writeBChan events Tick)
   let askPlugin st =
         case plugin of
           Nothing -> return ()
           Just p ->
             Lock.with choosingMove $
             do move <- runPlugin p st
-               writeChan events (PluginChoseMove move)
-  s <- customMain (mkVty def) events (app askPlugin) initialState
+               writeBChan events (PluginChoseMove move)
+  let buildVty = mkVty defaultConfig
+  initialVty <- buildVty
+  s <- customMain initialVty buildVty (Just events) (app askPlugin) initialState
   putStrLn $ "Zzzz... You fell asleep. Your score was " ++ show (s ^. score)
   return ()
 
